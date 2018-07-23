@@ -34,6 +34,7 @@ First try to connect to a camera::
 Take a shot with current settings::
 
     >>> cam = cameras[0]
+    >>> cam.start_rec_mode()
     >>> cam.act_take_picture()
 
 

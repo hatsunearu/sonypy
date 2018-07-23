@@ -8,15 +8,14 @@ setup(name="sonypy",
       classifiers=[
           'Development Status :: 2 - Pre-Alpha',
           'License :: OSI Approved :: MIT License',
-          'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3',
+          'Programming Language :: Python :: 3.7',
       ],
       keywords='sony camera remote control a7 nex',
       url='http://github.com/storborg/sonypy',
       author='Scott Torborg',
       author_email='scott@cartlogic.com',
       install_requires=[
-          'requests',
           # These are for tests.
           'coverage',
           'nose>=1.1',
