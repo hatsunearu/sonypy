@@ -29,10 +29,12 @@ class Discoverer(object):
                 yield addr
 
     def _parse_ssdp_response(self, data):
-        lines = data.split('\n')
+        lines = data.split('\r\n')
         assert lines[0] == 'HTTP/1.1 200 OK'
         headers = {}
         for line in lines[1:]:
+            if not line:
+                continue
             key, val = line.split(': ', 1)
             headers[key.lower()] = val
         return headers
