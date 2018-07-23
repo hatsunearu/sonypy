@@ -1,6 +1,6 @@
 import socket
-import re
 import requests
+from xml.etree import ElementTree as ET
 
 
 from .camera import Camera
@@ -17,18 +17,6 @@ discovery_msg = ('M-SEARCH * HTTP/1.1\r\n'
                  'MX: %d\r\n'
                  'ST: urn:schemas-sony-com:service:ScalarWebAPI:1\r\n'
                  '\r\n')
-
-
-dd_regex = ('<av:X_ScalarWebAPI_Service>'
-            '\s*'
-            '<av:X_ScalarWebAPI_ServiceType>'
-            '(.+)'
-            '</av:X_ScalarWebAPI_ServiceType>'
-            '<av:X_ScalarWebAPI_ActionList_URL>'
-            '(.+)'
-            '</av:X_ScalarWebAPI_ActionList_URL>'
-            '\s*'
-            '</av:X_ScalarWebAPI_Service>')
 
 
 class Discoverer(object):
@@ -80,10 +68,25 @@ class Discoverer(object):
         Parse the XML device definition file.
         """
         services = {}
-        for m in re.findall(dd_regex, doc):
-            service_name = m.group(1)
-            endpoint = m.group(2)
-            services[service_name] = endpoint
+
+        root = ET.fromstring(doc)
+        print(root.tag, root.attrib)
+        # device_info_list = root[-1][-1][-1]
+        device_info_list = root.find(
+            '{urn:schemas-upnp-org:device-1-0}device'
+            '/{urn:schemas-sony-com:av}X_ScalarWebAPI_DeviceInfo'
+            '/{urn:schemas-sony-com:av}X_ScalarWebAPI_ServiceList'
+        )
+        print('device_info', device_info_list)
+        for service in device_info_list:
+            name = service.find(
+                '{urn:schemas-sony-com:av}X_ScalarWebAPI_ServiceType'
+            ).text
+            url = service.find(
+                '{urn:schemas-sony-com:av}X_ScalarWebAPI_ActionList_URL'
+            ).text
+            services[name] = url
+            print(service)
         return services
 
     def _read_device_definition(self, url):
