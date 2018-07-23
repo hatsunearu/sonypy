@@ -1,9 +1,8 @@
 import socket
-import requests
+from urllib import request
 from xml.etree import ElementTree as ET
 
-
-from .camera import Camera
+from sonypy.camera import Camera
 
 
 SSDP_ADDR = '239.255.255.250'
@@ -22,6 +21,7 @@ discovery_msg = ('M-SEARCH * HTTP/1.1\r\n'
 class Discoverer(object):
     camera_class = Camera
 
+    @staticmethod
     def _interface_addresses(family=socket.AF_INET):
         for info in socket.getaddrinfo('', None):
             if family == info[0]:
@@ -51,19 +51,23 @@ class Discoverer(object):
         sock.setsockopt(socket.IPPROTO_IP,
                         socket.IP_MULTICAST_TTL,
                         2)
-        for _ in xrange(2):
-            msg = discovery_msg % (SSDP_ADDR, SSDP_PORT, SSDP_MX)
-            sock.sendto(msg, (SSDP_ADDR, SSDP_PORT))
+        for address in self._interface_addresses():
+            sock.bind(address)
+            for _ in range(2):
+                msg = discovery_msg % (SSDP_ADDR, SSDP_PORT, SSDP_MX)
+                msg = msg.encode()
+                sock.sendto(msg, (SSDP_ADDR, SSDP_PORT))
 
-        try:
-            data = sock.recv(1024)
-        except socket.timeout:
-            print "SOCKET TIMEOUT"
-            pass
-        else:
-            print "*****"
-            print data
-            yield self._parse_ssdp_response(data)
+            try:
+                data = sock.recv(1024)
+                data = data.decode('utf-8')
+            except socket.timeout:
+                print("SOCKET TIMEOUT")
+                pass
+            else:
+                print("*****")
+                print(data)
+                yield self._parse_ssdp_response(data)
 
     def _parse_device_definition(self, doc):
         """
@@ -96,8 +100,10 @@ class Discoverer(object):
         Fetch and parse the device definition, and extract the URL endpoint for
         the camera API service.
         """
-        r = requests.get(url)
-        services = self._parse_device_definition(r.text)
+        r = request.urlopen(url)
+        body = r.read()
+        body = body.decode('utf-8')
+        services = self._parse_device_definition(body)
         return services['camera']
 
     def discover(self):
@@ -105,5 +111,6 @@ class Discoverer(object):
         for resp in self._ssdp_discover():
             url = resp['location']
             endpoint = self._read_device_definition(url)
+            endpoint += '/camera'
             endpoints.append(endpoint)
         return [self.camera_class(endpoint) for endpoint in endpoints]

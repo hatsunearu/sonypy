@@ -1,4 +1,4 @@
-import requests
+from urllib import request
 import json
 import struct
 
@@ -29,14 +29,17 @@ class RawCamera(object):
                     id=1,
                     version=self.version)
         data = json.dumps(body)
-        r = requests.post(self.endpoint, data=data)
-        resp = r.json
+        data = data.encode()
+        r = request.urlopen(self.endpoint, data=data)
+        resp = r.read()
+        resp = resp.decode('utf-8')
+        resp = json.loads(resp)
         assert resp['id'] == 1
         error = resp.get('error')
         if error:
             self._handle_error(error)
         else:
-            return resp['results']
+            return resp['result']
 
     def _handle_error(self, error):
         raise CameraError(*error)
@@ -280,7 +283,7 @@ class RawCamera(object):
         """
         Connect to a liveview-format URL and yield a series of JPEG frames.
         """
-        r = requests.get(url)
+        r = request.get(url)
         while True:
             # Read common header, 8 bytes.
             seq, timestamp = self._decode_common_header(r.raw.read(8))
@@ -315,5 +318,5 @@ class Camera(RawCamera):
         """
         while True:
             liveview_url = self.await_take_picture()
-            r = requests.get(liveview_url)
+            r = request.get(liveview_url)
             yield r.body
