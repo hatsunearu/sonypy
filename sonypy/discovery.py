@@ -37,7 +37,7 @@ class Discoverer(object):
             headers[key.lower()] = val
         return headers
 
-    def _ssdp_discover(self, timeout=1):
+    def _ssdp_discover(self, timeout=30):
         socket.setdefaulttimeout(timeout)
 
         sock = socket.socket(socket.AF_INET,
